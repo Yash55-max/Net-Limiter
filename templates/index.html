@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NetLimiter - Bandwidth Control</title>
+    <meta name="description"
+        content="Advanced network bandwidth monitoring and control application for managing internet speed limits per application">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/theme.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo-section">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                        <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                </div>
+                <h1 class="logo-text">NetLimiter</h1>
+            </div>
+
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active" data-view="dashboard">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="3" y="3" width="7" height="7" stroke="currentColor" stroke-width="2" />
+                        <rect x="14" y="3" width="7" height="7" stroke="currentColor" stroke-width="2" />
+                        <rect x="3" y="14" width="7" height="7" stroke="currentColor" stroke-width="2" />
+                        <rect x="14" y="14" width="7" height="7" stroke="currentColor" stroke-width="2" />
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" data-view="processes">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M18 20V10" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                        <path d="M12 20V4" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                        <path d="M6 20V14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                    <span>Processes</span>
+                </a>
+                <a href="#" class="nav-item" data-view="connections">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" />
+                        <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="2" stroke-dasharray="2 2" />
+                        <circle cx="12" cy="12" r="11" stroke="currentColor" stroke-width="2" stroke-dasharray="4 4" />
+                    </svg>
+                    <span>Connections</span>
+                </a>
+                <a href="#" class="nav-item" data-view="rules">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" />
+                        <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" />
+                        <circle cx="12" cy="17" r="2" fill="currentColor" />
+                    </svg>
+                    <span>Rules</span>
+                </a>
+                {% if user.is_organizer() %}
+                <a href="#" class="nav-item" data-view="users">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2" />
+                        <path
+                            d="M23 21V19C22.9993 18.1137 22.7044 17.2528 22.1614 16.5523C21.6184 15.8519 20.8581 15.3516 20 15.13"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        <path
+                            d="M16 3.13C16.8604 3.35031 17.623 3.85071 18.1676 4.55232C18.7122 5.25392 19.0078 6.11683 19.0078 7.005C19.0078 7.89318 18.7122 8.75608 18.1676 9.45769C17.623 10.1593 16.8604 10.6597 16 10.88"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <span>Users</span>
+                </a>
+                {% endif %}
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="status-indicator">
+                    <div class="status-dot"></div>
+                    <span>Monitoring Active</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <button class="sidebar-toggle" id="sidebarToggle" title="Toggle Sidebar">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" />
+                        </svg>
+                    </button>
+                    <div>
+                        <h2 id="page-title">Dashboard</h2>
+                        <p id="page-subtitle">Real-time network monitoring and control</p>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="theme-switcher" id="themeSwitcher" title="Toggle Theme">
+                        <svg class="theme-icon sun-icon" viewBox="0 0 24 24" fill="none"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2" />
+                            <path
+                                d="M12 1V3M12 21V23M23 12H21M3 12H1M20.49 20.49L19.07 19.07M4.93 4.93L3.51 3.51M20.49 3.51L19.07 4.93M4.93 19.07L3.51 20.49"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                        </svg>
+                        <svg class="theme-icon moon-icon" viewBox="0 0 24 24" fill="none"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor"
+                                stroke-width="2" />
+                        </svg>
+                    </div>
+                    <div class="user-menu">
+                        <div class="user-info">
+                            <div class="user-avatar">
+                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2" />
+                                    <path d="M6 21C6 17.134 8.686 14 12 14C15.314 14 18 17.134 18 21"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                                </svg>
+                            </div>
+                            <div class="user-details">
+                                <span class="user-name">{{ user.username }}</span>
+                                <span class="user-role">{{ user.role|capitalize }}</span>
+                            </div>
+                        </div>
+                        <div class="user-dropdown">
+                            <a href="{{ url_for('logout') }}" class="dropdown-item logout-btn">
+                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path
+                                        d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round" />
+                                    <path d="M16 17L21 12L16 7" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round" />
+                                    <path d="M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round" />
+                                </svg>
+                                Logout
+                            </a>
+                        </div>
+                    </div>
+                    <div class="refresh-btn" id="refreshBtn" title="Refresh Data">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path
+                                d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C14.8273 3 17.35 4.30367 19 6.34267"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                            <path d="M21 3V7H17" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                        </svg>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard View -->
+            <div id="dashboard-view" class="view active">
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon upload">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 19V5M12 5L5 12M12 5L19 12" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                        </div>
+                        <div class="stat-content">
+                            <p class="stat-label">Upload Speed</p>
+                            <h3 class="stat-value" id="uploadSpeed">0 KB/s</h3>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon download">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 5V19M12 19L5 12M12 19L19 12" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                        </div>
+                        <div class="stat-content">
+                            <p class="stat-label">Download Speed</p>
+                            <h3 class="stat-value" id="downloadSpeed">0 KB/s</h3>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon total">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
+                                <path d="M12 6V12L16 14" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" />
+                            </svg>
+                        </div>
+                        <div class="stat-content">
+                            <p class="stat-label">Total Sent</p>
+                            <h3 class="stat-value" id="totalSent">0 MB</h3>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon total">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
+                                <path d="M8 12H16M16 12L12 8M16 12L12 16" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                        </div>
+                        <div class="stat-content">
+                            <p class="stat-label">Total Received</p>
+                            <h3 class="stat-value" id="totalReceived">0 MB</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <h3 class="chart-title">Bandwidth Usage (Last 60s)</h3>
+                        <canvas id="bandwidthChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Network Interfaces -->
+                <div class="section-card">
+                    <h3 class="section-title">Network Interfaces</h3>
+                    <div id="interfacesList" class="interfaces-list"></div>
+                </div>
+            </div>
+
+            <!-- Processes View -->
+            <div id="processes-view" class="view">
+                <div class="section-card">
+                    <div class="section-header">
+                        <h3 class="section-title">Active Network Processes</h3>
+                        <div class="search-box">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2" />
+                                <path d="M21 21L16.65 16.65" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" />
+                            </svg>
+                            <input type="text" id="processSearch" placeholder="Search processes...">
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Process Name</th>
+                                    <th>PID</th>
+                                    <th>Connections</th>
+                                    <th>Read</th>
+                                    <th>Write</th>
+                                    <th>Upload Limit</th>
+                                    <th>Download Limit</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="processesTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Connections View -->
+            <div id="connections-view" class="view">
+                <div class="section-card">
+                    <div class="section-header">
+                        <h3 class="section-title">Active Connections</h3>
+                        <div class="filter-group">
+                            <select id="connectionFilter" class="filter-select">
+                                <option value="all">All Connections</option>
+                                <option value="TCP">TCP Only</option>
+                                <option value="UDP">UDP Only</option>
+                                <option value="ESTABLISHED">Established</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Process</th>
+                                    <th>PID</th>
+                                    <th>Type</th>
+                                    <th>Local Address</th>
+                                    <th>Remote Address</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="connectionsTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rules View -->
+            <div id="rules-view" class="view">
+                <div class="section-card">
+                    <h3 class="section-title">Bandwidth Limit Rules</h3>
+                    <p class="section-description">Configure bandwidth limits for specific processes</p>
+                    <div id="rulesList" class="rules-list"></div>
+                </div>
+            </div>
+
+            <!-- Users View (Admin Only) -->
+            {% if user.is_organizer() %}
+            <div id="users-view" class="view">
+                <div class="section-card">
+                    <div class="section-header">
+                        <h3 class="section-title">User Management</h3>
+                        <div class="user-stats">
+                            <span id="totalUsers" class="stat-badge">0 Users</span>
+                            <span id="totalAdmins" class="stat-badge">0 Admins</span>
+                        </div>
+                    </div>
+                    <p class="section-description">Manage user accounts and permissions</p>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+    </div>
+
+    </main>
+    </div>
+
+    <!-- Limit Modal -->
+    <div id="limitModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Set Bandwidth Limit</h3>
+                <button class="modal-close" onclick="closeLimitModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Process Name</label>
+                    <input type="text" id="modalProcessName" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Process ID (PID)</label>
+                    <input type="text" id="modalPID" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Upload Limit (KB/s)</label>
+                    <input type="number" id="uploadLimit" placeholder="Leave empty for no limit" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Download Limit (KB/s)</label>
+                    <input type="number" id="downloadLimit" placeholder="Leave empty for no limit" min="0">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeLimitModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="applyLimit()">Apply Limit</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+
+</html>
