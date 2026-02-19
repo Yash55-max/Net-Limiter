@@ -522,12 +522,12 @@ def format_bytes(bytes_value):
     return f"{bytes_value:.2f} PB"
 
 if __name__ == '__main__':
-    print("=" * 60)
+    print("==" * 30)
     print("NetLimiter - Bandwidth Control Application")
-    print("=" * 60)
+    print("==" * 30)
     print("\nStarting server...")
-    print("Access the application at: http://localhost:5000")
+    print("Access the application at: http://localhost:8080")
     print("\nPress Ctrl+C to stop the server")
-    print("=" * 60)
+    print("==" * 30)
     
-    app.run(debug=False, host='0.0.0.0', port=5000)
+    app.run(debug=False, host='0.0.0.0', port=8080)

@@ -307,9 +307,147 @@
 
             <!-- Rules View -->
             <div id="rules-view" class="view">
+
+                <!-- Add New Rule Card -->
+                <div class="section-card rule-add-card">
+                    <div class="rule-add-header">
+                        <div class="rule-add-icon">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
+                                <path d="M12 8V16M8 12H16" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="section-title" style="margin:0">Add Bandwidth Limit Rule</h3>
+                            <p class="section-description" style="margin:0">Select a running process or enter a PID
+                                manually</p>
+                        </div>
+                    </div>
+
+                    <div class="rule-form-grid">
+                        <!-- Process Selector -->
+                        <div class="rule-form-group full-width">
+                            <label class="rule-label">
+                                <svg viewBox="0 0 24 24" fill="none" width="14" height="14">
+                                    <rect x="2" y="3" width="20" height="14" rx="2" stroke="currentColor"
+                                        stroke-width="2" />
+                                    <path d="M8 21H16M12 17V21" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" />
+                                </svg>
+                                Select Running Process
+                            </label>
+                            <div class="process-select-wrapper">
+                                <select id="ruleProcessSelect" class="rule-select" onchange="onProcessSelectChange()">
+                                    <option value="">⟳ Loading processes...</option>
+                                </select>
+                                <button class="btn btn-secondary btn-small" onclick="reloadProcessDropdown()"
+                                    title="Refresh process list">
+                                    <svg viewBox="0 0 24 24" fill="none" width="14" height="14">
+                                        <path
+                                            d="M21 12C21 16.97 16.97 21 12 21C7.03 21 3 16.97 3 12C3 7.03 7.03 3 12 3C14.83 3 17.35 4.3 19 6.34"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                                        <path d="M21 3V7H17" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round" />
+                                    </svg>
+                                    Refresh
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Manual PID override -->
+                        <div class="rule-form-group">
+                            <label class="rule-label">
+                                <svg viewBox="0 0 24 24" fill="none" width="14" height="14">
+                                    <path
+                                        d="M9 3H5C3.9 3 3 3.9 3 5V9M9 21H5C3.9 21 3 20.1 3 19V15M21 9V5C21 3.9 20.1 3 19 3H15M21 15V19C21 20.1 20.1 21 19 21H15"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                                </svg>
+                                Process ID (PID)
+                            </label>
+                            <input type="number" id="rulePID" class="rule-input"
+                                placeholder="Auto-filled or enter manually" min="1">
+                        </div>
+
+                        <!-- Process name display -->
+                        <div class="rule-form-group">
+                            <label class="rule-label">
+                                <svg viewBox="0 0 24 24" fill="none" width="14" height="14">
+                                    <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                                Process Name
+                            </label>
+                            <input type="text" id="ruleProcessName" class="rule-input"
+                                placeholder="Auto-filled from selection">
+                        </div>
+
+                        <!-- Upload Limit -->
+                        <div class="rule-form-group">
+                            <label class="rule-label">
+                                <svg viewBox="0 0 24 24" fill="none" width="14" height="14">
+                                    <path d="M12 19V5M12 5L5 12M12 5L19 12" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                                Upload Limit (KB/s)
+                            </label>
+                            <input type="number" id="ruleUploadLimit" class="rule-input" placeholder="e.g. 512" min="1">
+                            <div class="preset-buttons">
+                                <span class="preset-label">Quick:</span>
+                                <button class="preset-btn" onclick="setPreset('ruleUploadLimit', 128)">128</button>
+                                <button class="preset-btn" onclick="setPreset('ruleUploadLimit', 512)">512</button>
+                                <button class="preset-btn" onclick="setPreset('ruleUploadLimit', 1024)">1 MB</button>
+                                <button class="preset-btn" onclick="setPreset('ruleUploadLimit', 5120)">5 MB</button>
+                            </div>
+                        </div>
+
+                        <!-- Download Limit -->
+                        <div class="rule-form-group">
+                            <label class="rule-label">
+                                <svg viewBox="0 0 24 24" fill="none" width="14" height="14">
+                                    <path d="M12 5V19M12 19L5 12M12 19L19 12" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                                Download Limit (KB/s)
+                            </label>
+                            <input type="number" id="ruleDownloadLimit" class="rule-input" placeholder="e.g. 1024"
+                                min="1">
+                            <div class="preset-buttons">
+                                <span class="preset-label">Quick:</span>
+                                <button class="preset-btn" onclick="setPreset('ruleDownloadLimit', 256)">256</button>
+                                <button class="preset-btn" onclick="setPreset('ruleDownloadLimit', 1024)">1 MB</button>
+                                <button class="preset-btn" onclick="setPreset('ruleDownloadLimit', 5120)">5 MB</button>
+                                <button class="preset-btn" onclick="setPreset('ruleDownloadLimit', 10240)">10
+                                    MB</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="rule-form-actions">
+                        <button class="btn btn-secondary" onclick="clearRuleForm()">
+                            <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
+                                <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" />
+                            </svg>
+                            Clear
+                        </button>
+                        <button class="btn btn-primary rule-apply-btn" onclick="applyRuleFromForm()">
+                            <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
+                                <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                            Apply Rule
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Active Rules Card -->
                 <div class="section-card">
-                    <h3 class="section-title">Bandwidth Limit Rules</h3>
-                    <p class="section-description">Configure bandwidth limits for specific processes</p>
+                    <div class="section-header">
+                        <h3 class="section-title">Active Bandwidth Rules</h3>
+                        <span id="rulesCount" class="stat-badge">0 Rules</span>
+                    </div>
+                    <p class="section-description">Currently enforced bandwidth limits per process</p>
                     <div id="rulesList" class="rules-list"></div>
                 </div>
             </div>

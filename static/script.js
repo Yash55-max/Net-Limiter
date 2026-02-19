@@ -103,6 +103,11 @@ function switchView(view) {
 
     // Refresh data for the new view
     refreshData();
+
+    // Auto-load process dropdown when entering Rules view
+    if (view === 'rules') {
+        reloadProcessDropdown();
+    }
 }
 
 // Chart Initialization
@@ -428,30 +433,91 @@ async function updateConnections() {
     }
 }
 
+// Store process list for name lookups in rules
+let cachedProcessList = [];
+
 async function updateRules() {
     try {
-        const response = await fetch('/api/limits');
-        const limits = await response.json();
+        const [limitsRes, processesRes] = await Promise.all([
+            fetch('/api/limits'),
+            fetch('/api/processes')
+        ]);
+        const limits = await limitsRes.json();
+        const processes = await processesRes.json();
+
+        // Cache for name lookup
+        cachedProcessList = processes;
+
+        // Build pid→name map
+        const pidNameMap = {};
+        processes.forEach(p => { pidNameMap[p.pid] = p.name; });
 
         const container = document.getElementById('rulesList');
+        const count = Object.keys(limits).length;
 
-        if (Object.keys(limits).length === 0) {
-            container.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 2rem;">No bandwidth rules configured. Go to Processes to set limits.</p>';
+        // Update badge
+        const badge = document.getElementById('rulesCount');
+        if (badge) badge.textContent = `${count} Rule${count !== 1 ? 's' : ''}`;
+
+        if (count === 0) {
+            container.innerHTML = `
+                <div class="rules-empty">
+                    <svg viewBox="0 0 24 24" fill="none" width="48" height="48">
+                        <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="1.5"/>
+                    </svg>
+                    <p>No bandwidth rules configured yet.</p>
+                    <p class="rules-empty-sub">Use the form above to add your first rule.</p>
+                </div>`;
             return;
         }
 
-        const html = Object.entries(limits).map(([pid, limit]) => `
-    < div class="rule-item" >
-                <div class="rule-info">
-                    <h4>Process ID: ${pid}</h4>
-                    <div class="rule-limits">
-                        ${limit.upload ? `<span>Upload: ${limit.upload} KB/s</span>` : ''}
-                        ${limit.download ? `<span>Download: ${limit.download} KB/s</span>` : ''}
+        const html = Object.entries(limits).map(([pid, limit]) => {
+            const name = pidNameMap[pid] || `PID ${pid}`;
+            const uploadBadge = limit.upload
+                ? `<div class="rule-limit-badge upload-badge">
+                       <svg viewBox="0 0 24 24" fill="none" width="12" height="12"><path d="M12 19V5M12 5L5 12M12 5L19 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                       Upload: <strong>${limit.upload} KB/s</strong>
+                   </div>`
+                : `<div class="rule-limit-badge no-limit-badge">Upload: No limit</div>`;
+            const downloadBadge = limit.download
+                ? `<div class="rule-limit-badge download-badge">
+                       <svg viewBox="0 0 24 24" fill="none" width="12" height="12"><path d="M12 5V19M12 19L5 12M12 19L19 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                       Download: <strong>${limit.download} KB/s</strong>
+                   </div>`
+                : `<div class="rule-limit-badge no-limit-badge">Download: No limit</div>`;
+
+            return `
+            <div class="rule-item">
+                <div class="rule-item-left">
+                    <div class="rule-process-icon">
+                        <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
+                            <rect x="2" y="3" width="20" height="14" rx="2" stroke="currentColor" stroke-width="2"/>
+                            <path d="M8 21H16M12 17V21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <div class="rule-item-info">
+                        <h4 class="rule-process-name">${name}</h4>
+                        <span class="rule-pid-badge">PID: ${pid}</span>
                     </div>
                 </div>
-                <button class="btn btn-danger btn-small" onclick="removeLimit(${pid})">Remove Rule</button>
-            </div >
-    `).join('');
+                <div class="rule-limits-row">
+                    ${uploadBadge}
+                    ${downloadBadge}
+                </div>
+                <div class="rule-item-actions">
+                    <button class="btn btn-secondary btn-small" onclick="editRule(${pid}, '${name}', ${limit.upload || ''}, ${limit.download || ''})">
+                        <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M18.5 2.5C18.8978 2.10217 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.10217 21.5 2.5C21.8978 2.89782 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.10217 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        Edit
+                    </button>
+                    <button class="btn btn-danger btn-small" onclick="removeLimit(${pid})">
+                        <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M3 6H21M19 6L18.1 20.1C18.05 20.6 17.6 21 17.1 21H6.9C6.4 21 5.95 20.6 5.9 20.1L5 6M9 6V4C9 3.45 9.45 3 10 3H14C14.55 3 15 3.45 15 4V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        Remove
+                    </button>
+                </div>
+            </div>`;
+        }).join('');
 
         container.innerHTML = html;
 
@@ -459,6 +525,134 @@ async function updateRules() {
         console.error('Error updating rules:', error);
     }
 }
+
+// Load running processes into the dropdown
+async function reloadProcessDropdown() {
+    const select = document.getElementById('ruleProcessSelect');
+    if (!select) return;
+    select.innerHTML = '<option value="">⟳ Loading...</option>';
+    try {
+        const response = await fetch('/api/processes');
+        const processes = await response.json();
+        cachedProcessList = processes;
+
+        if (processes.length === 0) {
+            select.innerHTML = '<option value="">No active network processes found</option>';
+            return;
+        }
+
+        const opts = ['<option value="">— Select a process —</option>'];
+        processes.forEach(p => {
+            opts.push(`<option value="${p.pid}" data-name="${p.name}">${p.name} (PID: ${p.pid})</option>`);
+        });
+        select.innerHTML = opts.join('');
+    } catch (e) {
+        select.innerHTML = '<option value="">Failed to load — enter PID manually</option>';
+    }
+}
+
+function onProcessSelectChange() {
+    const select = document.getElementById('ruleProcessSelect');
+    const selected = select.options[select.selectedIndex];
+    if (selected && selected.value) {
+        document.getElementById('rulePID').value = selected.value;
+        document.getElementById('ruleProcessName').value = selected.dataset.name || '';
+    } else {
+        document.getElementById('rulePID').value = '';
+        document.getElementById('ruleProcessName').value = '';
+    }
+}
+
+function setPreset(fieldId, value) {
+    document.getElementById(fieldId).value = value;
+}
+
+function clearRuleForm() {
+    document.getElementById('ruleProcessSelect').value = '';
+    document.getElementById('rulePID').value = '';
+    document.getElementById('ruleProcessName').value = '';
+    document.getElementById('ruleUploadLimit').value = '';
+    document.getElementById('ruleDownloadLimit').value = '';
+}
+
+function editRule(pid, name, uploadLimit, downloadLimit) {
+    // Scroll to form
+    document.querySelector('.rule-add-card').scrollIntoView({ behavior: 'smooth' });
+    document.getElementById('rulePID').value = pid;
+    document.getElementById('ruleProcessName').value = name;
+    document.getElementById('ruleUploadLimit').value = uploadLimit || '';
+    document.getElementById('ruleDownloadLimit').value = downloadLimit || '';
+    // Try to select it in the dropdown too
+    const select = document.getElementById('ruleProcessSelect');
+    for (let opt of select.options) {
+        if (opt.value == pid) { select.value = pid; break; }
+    }
+}
+
+async function applyRuleFromForm() {
+    const pid = parseInt(document.getElementById('rulePID').value);
+    const uploadLimit = document.getElementById('ruleUploadLimit').value;
+    const downloadLimit = document.getElementById('ruleDownloadLimit').value;
+
+    if (!pid || pid < 1) {
+        showToast('Please select a process or enter a valid PID.', 'error');
+        return;
+    }
+    if (!uploadLimit && !downloadLimit) {
+        showToast('Enter at least one limit (upload or download).', 'error');
+        return;
+    }
+
+    try {
+        const btn = document.querySelector('.rule-apply-btn');
+        btn.disabled = true;
+        btn.textContent = 'Applying...';
+
+        const response = await fetch('/api/limit/set', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                pid: pid,
+                upload_limit: uploadLimit ? parseInt(uploadLimit) : null,
+                download_limit: downloadLimit ? parseInt(downloadLimit) : null
+            })
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+            showToast('✓ Bandwidth rule applied successfully!', 'success');
+            clearRuleForm();
+            await updateRules();
+        } else {
+            showToast('✗ ' + (result.error || 'Failed to apply rule. Admin access required.'), 'error');
+        }
+    } catch (error) {
+        showToast('✗ Network error. Make sure you are logged in as Admin.', 'error');
+    } finally {
+        const btn = document.querySelector('.rule-apply-btn');
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Apply Rule`;
+        }
+    }
+}
+
+// Toast notification helper
+function showToast(message, type = 'success') {
+    let toast = document.getElementById('appToast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'appToast';
+        document.body.appendChild(toast);
+    }
+    toast.className = `app-toast app-toast-${type} show`;
+    toast.textContent = message;
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => toast.classList.remove('show'), 3500);
+}
+
+
 
 // User Management Functions
 async function updateUsers() {
