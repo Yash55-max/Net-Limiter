@@ -2,7 +2,7 @@
 
 ## 🎯 Overview
 
-The NetLimiter application now has a **3-tier role system** for managing users and permissions:
+The NetLimiter application now has a **3-tier role system** for managing users and permissions:-
 
 1. **Organizer** - Super-admin with exclusive user management rights
 2. **Admin** - Can set bandwidth limits and monitor network
